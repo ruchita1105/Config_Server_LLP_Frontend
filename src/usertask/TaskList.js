@@ -1,0 +1,180 @@
+import React, { useState, useEffect } from 'react';
+import { Container, Table, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import UserService from '../services/UserService';
+import { toast } from 'react-toastify';
+
+const TaskList = () => {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const userTasks = await UserService.getTasks();
+      setTasks(userTasks);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setError(error.message || 'Failed to load tasks');
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (taskId, newStatus) => {
+    if (!taskId) {
+      toast.error('Invalid task reference');
+      return;
+    }
+
+    try {
+      await UserService.updateTaskStatus(taskId, { status: newStatus });
+      toast.success('Status updated successfully');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error(error.message || 'Failed to update status');
+    }
+  };
+
+  const handleDeleteClick = (taskId) => {
+    if (!taskId) {
+      toast.error('Invalid task reference');
+      return;
+    }
+    setCurrentTaskId(taskId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!currentTaskId) {
+      toast.error('No task selected for deletion');
+      setShowDeleteModal(false);
+      return;
+    }
+
+    try {
+      await UserService.deleteTask(currentTaskId);
+      toast.success('Task deleted successfully');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error(error.message || 'Failed to delete task');
+    } finally {
+      setShowDeleteModal(false);
+      setCurrentTaskId(null);
+    }
+  };
+
+  const handleEditClick = (taskId) => {
+    if (!taskId) {
+      toast.error('Invalid task reference');
+      return;
+    }
+    navigate(`/edit-task/${taskId}`);
+  };
+
+  if (loading) {
+    return (
+      <Container className="mt-4 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+        <p>Loading your tasks...</p>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">
+          {error}
+        </Alert>
+        <Button variant="primary" onClick={fetchTasks}>
+          Try Again
+        </Button>
+      </Container>
+    );
+  }
+
+  return (
+    <Container className="mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Your Tasks</h2>
+        <Button variant="primary" onClick={() => navigate('/add-tasks')} className="ms-2">
+          Add New Task
+        </Button>
+      </div>
+
+      {tasks.length === 0 ? (
+        <div className="text-center py-4">
+          <p>No tasks found. Create your first task!</p>
+          <Button variant="primary" onClick={() => navigate('/add-tasks')}>
+            Add Task
+          </Button>
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.map(task => (
+                <tr key={task._id || task.id}>
+                  <td>{task.title}</td>
+                  <td>{task.description}</td>
+                  <td>
+                    <select
+                      className={`form-select ${task.status === 'Completed' ? 'bg-success text-white' : task.status === 'In Progress' ? 'bg-warning text-dark' : 'bg-secondary text-white'}`}
+                      value={task.status}
+                      onChange={(e) => handleStatusChange(task._id || task.id, e.target.value)}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </td>
+                  <td className="text-center">
+                    <Button variant="outline-danger" size="sm" onClick={() => handleDeleteClick(task._id || task.id)} className="me-2">Delete</Button>
+                    <Button variant="outline-primary" size="sm" onClick={() => handleEditClick(task._id || task.id)}>Edit</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      )}
+
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete this task? This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete}>Delete Task</Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
+  );
+};
+
+export default TaskList;
