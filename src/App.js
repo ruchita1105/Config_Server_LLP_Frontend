@@ -1,3 +1,5 @@
+// src/App.js
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import AdminDashboard from './dashboards/AdminDashboard';
@@ -17,7 +19,7 @@ import VerifyOtp from "./components/VerifyOtp";
 import ResetPassword from "./components/ResetPassword";
 import API from "./services/api";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import UnauthenticatedRoute from "./components/UnauthenticatedRoute"; // Import added
 
 function App() {
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
@@ -44,25 +46,6 @@ function App() {
     }
   };
 
-  // useEffect(() => {
-  //   setOnTokenExpired(() => setShowTimeoutModal(true));
-
-  //   const checkTokenExpiration = setInterval(() => {
-  //     const token = localStorage.getItem("token");
-  //     if (token) {
-  //       try {
-  //         const { exp } = JSON.parse(atob(token.split('.')[1]));
-  //         if (Date.now() >= exp * 1000) {
-  //           setShowTimeoutModal(true);
-  //         }
-  //       } catch (err) {
-  //         console.error("Token parsing error:", err);
-  //       }
-  //     }
-  //   }, 60000);
-
-  //   return () => clearInterval(checkTokenExpiration);
-  // }, []);
   useEffect(() => {
     // Register callback for API-level token expiration
     setOnTokenExpired(() => {
@@ -71,10 +54,10 @@ function App() {
         setShowTimeoutModal(true);
       }
     });
-  
+
     const intervalId = setInterval(() => {
       const token = localStorage.getItem("token");
-  
+
       // Only run expiration logic if token is valid
       if (token) {
         try {
@@ -87,21 +70,20 @@ function App() {
         }
       }
     }, 60000);
-  
+
     return () => clearInterval(intervalId);
   }, []);
 
-  
   return (
     <div className="App">
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/" element={<UnauthenticatedRoute><Login /></UnauthenticatedRoute>} />
+        <Route path="/login" element={<UnauthenticatedRoute><Login /></UnauthenticatedRoute>} />
+        <Route path="/register" element={<UnauthenticatedRoute><Register /></UnauthenticatedRoute>} />
+        <Route path="/forgot-password" element={<UnauthenticatedRoute><ForgotPassword /></UnauthenticatedRoute>} />
+        <Route path="/verify-otp" element={<UnauthenticatedRoute><VerifyOtp /></UnauthenticatedRoute>} />
+        <Route path="/reset-password" element={<UnauthenticatedRoute><ResetPassword /></UnauthenticatedRoute>} />
 
         {/* Protected Routes */}
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
