@@ -55,7 +55,7 @@ function Register() {
       navigate("/login");
     } catch (err) {
       console.error("Registration failed:", err);
-      alert(err.response?.data?.error || "Registration failed");
+      alert(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -107,8 +107,8 @@ function Register() {
           </div>
 
           {/* Name Fields */}
-          <div className="name-fields">
-            <div className="input-group">
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            <div className="input-group" style={{ flex: 1, minWidth: "45%" }}>
               <span className="input-icon">
                 <FaUser />
               </span>
@@ -123,7 +123,7 @@ function Register() {
               {errors.firstname && <div className="error-message">{errors.firstname}</div>}
             </div>
 
-            <div className="input-group">
+            <div className="input-group" style={{ flex: 1, minWidth: "45%" }}>
               <span className="input-icon">
                 <FaUser />
               </span>

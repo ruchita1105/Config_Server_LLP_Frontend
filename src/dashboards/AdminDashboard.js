@@ -19,7 +19,8 @@ const AdminDashboard = () => {
       const adminId = localStorage.getItem('userId');
 
       if (!token || !adminId) {
-        navigate('/login');
+       // navigate('/login');
+       navigate("/login", { replace: true }); 
         return;
       }
 

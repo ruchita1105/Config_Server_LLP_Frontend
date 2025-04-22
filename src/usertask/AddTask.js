@@ -59,7 +59,7 @@ const AddTask = () => {
 
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="title">
-          <Form.Label>Title <span className="text-danger">*</span></Form.Label>
+          <Form.Label><b>Title </b><span className="text-danger">*</span></Form.Label>
           <Form.Control
             type="text"
             name="title"
@@ -76,7 +76,7 @@ const AddTask = () => {
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="description">
-          <Form.Label>Description</Form.Label>
+          <Form.Label><b>Description</b></Form.Label>
           <Form.Control
             as="textarea"
             rows={4}
@@ -92,7 +92,7 @@ const AddTask = () => {
         </Form.Group>
 
         <Form.Group className="mb-4" controlId="status">
-          <Form.Label>Status <span className="text-danger">*</span></Form.Label>
+          <Form.Label><b>Status </b><span className="text-danger">*</span></Form.Label>
           <Form.Select
             name="status"
             value={taskData.status}

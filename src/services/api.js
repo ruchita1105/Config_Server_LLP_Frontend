@@ -46,7 +46,12 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    // ✅ Skip token refresh handling for login and register endpoints
+    const isAuthEndpoint =
+      originalRequest.url.includes("/login") ||
+      originalRequest.url.includes("/register");
+
+    if (isAuthEndpoint || error.response?.status !== 401 || originalRequest._retry) {
       return handleNonTokenErrors(error);
     }
 

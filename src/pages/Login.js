@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaSpinner } from "react-icons/fa";
@@ -8,13 +8,24 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./Auth.css";
 
 function Login() {
-  const [credentials, setCredentials] = useState({ 
-    email: "", 
-    password: "" 
+  const [credentials, setCredentials] = useState({
+    email: "",
+    password: ""
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Redirect to dashboard if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (token && role) {
+      const redirectPath = role === "admin" ? "/admin" : "/user";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [navigate]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,13 +34,13 @@ function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setCredentials(prev => ({
+    setCredentials((prev) => ({
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: null
       }));
@@ -38,28 +49,28 @@ function Login() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!credentials.email) {
       newErrors.email = "Email is required";
     } else if (!validateEmail(credentials.email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!credentials.password) {
       newErrors.password = "Password is required";
     } else if (credentials.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
 
     try {
@@ -67,7 +78,7 @@ function Login() {
         username: credentials.email,
         password: credentials.password
       });
-      
+
       const { token, refreshToken, sessionId, role, userId } = res.data;
 
       // Store all authentication data
@@ -92,9 +103,8 @@ function Login() {
 
     } catch (err) {
       console.error("Login error:", err);
-      alert(err.response?.data?.error || "Login failed");
-      
       let errorMessage = "Login failed. Please try again.";
+
       if (err.response) {
         if (err.response.status === 401) {
           errorMessage = "Invalid email or password";
@@ -102,12 +112,12 @@ function Login() {
           errorMessage = err.response.data.message;
         }
       }
-      
+
       toast.error(errorMessage, {
         autoClose: 3000,
         position: "top-center"
       });
-      
+
       // Clear sensitive data on failure
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
@@ -177,8 +187,8 @@ function Login() {
           </button>
 
           <div className="text-center mt-2">
-            <span 
-              className="link" 
+            <span
+              className="link"
               onClick={() => navigate("/forgot-password")}
               style={{ cursor: "pointer", fontSize: "0.9rem" }}
             >
@@ -189,8 +199,8 @@ function Login() {
 
         <p className="auth-footer mt-3">
           New here?{" "}
-          <span 
-            className="link" 
+          <span
+            className="link"
             onClick={() => navigate("/register")}
             style={{ cursor: "pointer" }}
           >
