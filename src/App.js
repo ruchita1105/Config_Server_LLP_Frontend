@@ -1,31 +1,37 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+// src/App.js
+import React, { useState, useEffect, useRef } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import AdminDashboard from './dashboards/AdminDashboard';
 import UserDashboard from './dashboards/UserDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import UserForm from './users/UserForm';
-import ViewTask from './usertask/ViewTask';
 import UserTask from './usertask/UserTask';
 import AddTask from "./usertask/AddTask";
 import TaskList from './usertask/TaskList';
 import UpdateTask from './usertask/UpdateTask';
 import SessionTimeoutModal from "./components/SessionTimeoutModal";
-import { setOnTokenExpired } from "./services/api";
 import ForgotPassword from "./components/ForgotPassword";
 import VerifyOtp from "./components/VerifyOtp";
 import ResetPassword from "./components/ResetPassword";
-import API from "./services/api";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+import API, { setOnTokenExpired } from "./services/api";
 
 
 function App() {
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const modalShownRef = useRef(false);
+  const countdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.clear();
     setShowTimeoutModal(false);
+    modalShownRef.current = false;
+    clearInterval(countdownRef.current);
     navigate("/login", { replace: true });
   };
 
@@ -33,91 +39,80 @@ function App() {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
       const response = await API.post("api/auth/refresh-token", { refreshToken });
-
-      localStorage.setItem("token", response.data.token);
-      API.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
+      const newToken = response.data.token;
+      localStorage.setItem("token", newToken);
+      API.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
       setShowTimeoutModal(false);
-      window.location.reload();
+      modalShownRef.current = false;
+      clearInterval(countdownRef.current);
     } catch (error) {
-      console.error("Token refresh failed:", error);
       handleLogout();
     }
   };
 
-  // useEffect(() => {
-  //   setOnTokenExpired(() => setShowTimeoutModal(true));
-
-  //   const checkTokenExpiration = setInterval(() => {
-  //     const token = localStorage.getItem("token");
-  //     if (token) {
-  //       try {
-  //         const { exp } = JSON.parse(atob(token.split('.')[1]));
-  //         if (Date.now() >= exp * 1000) {
-  //           setShowTimeoutModal(true);
-  //         }
-  //       } catch (err) {
-  //         console.error("Token parsing error:", err);
-  //       }
-  //     }
-  //   }, 60000);
-
-  //   return () => clearInterval(checkTokenExpiration);
-  // }, []);
   useEffect(() => {
-    // Register callback for API-level token expiration
-    setOnTokenExpired(() => {
+    setOnTokenExpired(() => setShowTimeoutModal(true));
+
+    const interval = setInterval(() => {
       const token = localStorage.getItem("token");
-      if (token) {
-        setShowTimeoutModal(true);
-      }
-    });
-  
-    const intervalId = setInterval(() => {
-      const token = localStorage.getItem("token");
-  
-      // Only run expiration logic if token is valid
-      if (token) {
-        try {
-          const { exp } = JSON.parse(atob(token.split('.')[1]));
-          if (Date.now() >= exp * 1000) {
-            setShowTimeoutModal(true);
-          }
-        } catch (err) {
-          console.error("Token parsing error:", err);
+      if (!token) return;
+
+      try {
+        const { exp } = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now();
+        const expiryTime = exp * 1000;
+        const timeLeft = expiryTime - currentTime;
+
+        if (timeLeft <= 5000 && timeLeft > 0 && !modalShownRef.current) {
+          modalShownRef.current = true;
+          setShowTimeoutModal(true);
+          setCountdown(5);
+
+          countdownRef.current = setInterval(() => {
+            setCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(countdownRef.current);
+                handleLogout();
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         }
-      }
-    }, 60000);
-  
-    return () => clearInterval(intervalId);
+      } catch (err) {}
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(countdownRef.current);
+    };
   }, []);
 
-  
   return (
     <div className="App">
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-
-        {/* Protected Routes */}
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/user" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-        <Route path="/user-form" element={<ProtectedRoute><UserForm /></ProtectedRoute>} />
-        <Route path="/user/tasks" element={<ProtectedRoute><UserTask /></ProtectedRoute>} />
-        <Route path="/add-tasks" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
-        <Route path="/edit-task/:taskId" element={<ProtectedRoute><UpdateTask /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
-        <Route path="/view-task/:taskId" element={<ProtectedRoute><ViewTask /></ProtectedRoute>} />
+      <Routes location={location}>
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/verify-otp" element={<PublicRoute><VerifyOtp key={location.key} /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
+        <Route path="/user-form" element={<ProtectedRoute allowedRole="user"><UserForm /></ProtectedRoute>} />
+        <Route path="/user/tasks" element={<ProtectedRoute allowedRole="user"><UserTask /></ProtectedRoute>} />
+        <Route path="/add-tasks" element={<ProtectedRoute allowedRole="user"><AddTask /></ProtectedRoute>} />
+        <Route path="/edit-task/:taskId" element={<ProtectedRoute allowedRole="user"><UpdateTask /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute allowedRole="user"><TaskList /></ProtectedRoute>} />
       </Routes>
 
+    
+      
       <SessionTimeoutModal
         show={showTimeoutModal}
         onLogout={handleLogout}
         onContinue={handleContinue}
+        countdown={countdown}
       />
     </div>
   );

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Table, Button, Spinner, Alert, Modal } from 'react-bootstrap';
+import { Container, Table, Button, Spinner, Alert as BootstrapAlert, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import UserService from '../services/UserService';
-import { toast } from 'react-toastify';
+import Alert from '../components/Alert';
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -10,6 +10,7 @@ const TaskList = () => {
   const [error, setError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +25,10 @@ const TaskList = () => {
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setError(error.message || 'Failed to load tasks');
-      toast.error('Failed to load tasks');
+      setAlert({
+        type: 'error',
+        message: 'Failed to load tasks'
+      });
     } finally {
       setLoading(false);
     }
@@ -32,23 +36,35 @@ const TaskList = () => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     if (!taskId) {
-      toast.error('Invalid task reference');
+      setAlert({
+        type: 'error',
+        message: 'Invalid task reference'
+      });
       return;
     }
 
     try {
       await UserService.updateTaskStatus(taskId, { status: newStatus });
-      toast.success('Status updated successfully');
+      setAlert({
+        type: 'success',
+        message: 'Status updated successfully'
+      });
       fetchTasks();
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error(error.message || 'Failed to update status');
+      setAlert({
+        type: 'error',
+        message: error.message || 'Failed to update status'
+      });
     }
   };
 
   const handleDeleteClick = (taskId) => {
     if (!taskId) {
-      toast.error('Invalid task reference');
+      setAlert({
+        type: 'error',
+        message: 'Invalid task reference'
+      });
       return;
     }
     setCurrentTaskId(taskId);
@@ -57,18 +73,27 @@ const TaskList = () => {
 
   const confirmDelete = async () => {
     if (!currentTaskId) {
-      toast.error('No task selected for deletion');
+      setAlert({
+        type: 'error',
+        message: 'No task selected for deletion'
+      });
       setShowDeleteModal(false);
       return;
     }
 
     try {
       await UserService.deleteTask(currentTaskId);
-      toast.success('Task deleted successfully');
+      setAlert({
+        type: 'success',
+        message: 'Task deleted successfully'
+      });
       fetchTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
-      toast.error(error.message || 'Failed to delete task');
+      setAlert({
+        type: 'error',
+        message: error.message || 'Failed to delete task'
+      });
     } finally {
       setShowDeleteModal(false);
       setCurrentTaskId(null);
@@ -77,7 +102,10 @@ const TaskList = () => {
 
   const handleEditClick = (taskId) => {
     if (!taskId) {
-      toast.error('Invalid task reference');
+      setAlert({
+        type: 'error',
+        message: 'Invalid task reference'
+      });
       return;
     }
     navigate(`/edit-task/${taskId}`);
@@ -97,9 +125,9 @@ const TaskList = () => {
   if (error) {
     return (
       <Container className="mt-4">
-        <Alert variant="danger">
+        <BootstrapAlert variant="danger">
           {error}
-        </Alert>
+        </BootstrapAlert>
         <Button variant="primary" onClick={fetchTasks}>
           Try Again
         </Button>
@@ -109,6 +137,7 @@ const TaskList = () => {
 
   return (
     <Container className="mt-4">
+      {alert && <Alert {...alert} />}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Your Tasks</h2>
         <Button variant="primary" onClick={() => navigate('/add-tasks')} className="ms-2">

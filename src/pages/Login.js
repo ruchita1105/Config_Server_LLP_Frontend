@@ -1,20 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaSpinner } from "react-icons/fa";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import Alert from "../components/Alert";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Auth.css";
 
 function Login() {
-  const [credentials, setCredentials] = useState({ 
-    email: "", 
-    password: "" 
+  const [credentials, setCredentials] = useState({
+    email: "",
+    password: ""
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (token && role) {
+      const redirectPath = role === "admin" ? "/admin" : "/user";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [navigate]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,13 +33,13 @@ function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setCredentials(prev => ({
+    setCredentials((prev) => ({
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: null
       }));
@@ -38,28 +48,28 @@ function Login() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!credentials.email) {
       newErrors.email = "Email is required";
     } else if (!validateEmail(credentials.email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!credentials.password) {
       newErrors.password = "Password is required";
     } else if (credentials.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
 
     try {
@@ -67,34 +77,30 @@ function Login() {
         username: credentials.email,
         password: credentials.password
       });
-      
+
       const { token, refreshToken, sessionId, role, userId } = res.data;
 
-      // Store all authentication data
       localStorage.setItem("token", token);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("sessionId", sessionId);
       localStorage.setItem("role", role.toLowerCase());
       localStorage.setItem("userId", userId);
 
-      // Set default authorization header
       API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Show success notification
-      toast.success("Login successful!", {
-        autoClose: 2000,
-        position: "top-center"
+      setAlert({
+        type: 'success',
+        message: 'Login successful!',
+        onClose: () => {
+          const redirectPath = role.toLowerCase() === "admin" ? "/admin" : "/user";
+          navigate(redirectPath, { replace: true });
+        }
       });
-
-      // Redirect based on role
-      const redirectPath = role.toLowerCase() === "admin" ? "/admin" : "/user";
-      navigate(redirectPath, { replace: true });
 
     } catch (err) {
       console.error("Login error:", err);
-      alert(err.response?.data?.error || "Login failed");
-      
       let errorMessage = "Login failed. Please try again.";
+
       if (err.response) {
         if (err.response.status === 401) {
           errorMessage = "Invalid email or password";
@@ -102,13 +108,12 @@ function Login() {
           errorMessage = err.response.data.message;
         }
       }
-      
-      toast.error(errorMessage, {
-        autoClose: 3000,
-        position: "top-center"
+
+      setAlert({
+        type: 'error',
+        message: errorMessage
       });
-      
-      // Clear sensitive data on failure
+
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
@@ -119,6 +124,7 @@ function Login() {
 
   return (
     <div className="auth-container">
+      {alert && <Alert {...alert} />}
       <div className="auth-box">
         <h2 className="auth-title">Welcome Back</h2>
         <p className="auth-subtitle">Login to access your account</p>
@@ -177,8 +183,8 @@ function Login() {
           </button>
 
           <div className="text-center mt-2">
-            <span 
-              className="link" 
+            <span
+              className="link"
               onClick={() => navigate("/forgot-password")}
               style={{ cursor: "pointer", fontSize: "0.9rem" }}
             >
@@ -189,8 +195,8 @@ function Login() {
 
         <p className="auth-footer mt-3">
           New here?{" "}
-          <span 
-            className="link" 
+          <span
+            className="link"
             onClick={() => navigate("/register")}
             style={{ cursor: "pointer" }}
           >

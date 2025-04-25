@@ -1,22 +1,19 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
-const SessionTimeoutModal = ({ show, onContinue, onLogout }) => {
+const SessionTimeoutModal = ({ show, onContinue, onLogout, countdown }) => {
   return (
     <Modal show={show} centered backdrop="static" keyboard={false}>
-      <Modal.Header closeButton={false}>
-        <Modal.Title>Session Expired</Modal.Title>
+      <Modal.Header>
+        <Modal.Title>Session Expiring Soon</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        Your session has expired. Would you like to continue your session?
+        <p>Your session will expire in <strong>{countdown}</strong> seconds.</p>
+        <p>Do you want to continue your session?</p>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="outline-danger" onClick={onLogout}>
-          Logout
-        </Button>
-        <Button variant="primary" onClick={onContinue}>
-          Continue Session
-        </Button>
+        <Button variant="danger" onClick={onLogout}>Logout</Button>
+        <Button variant="primary" onClick={onContinue}>Continue</Button>
       </Modal.Footer>
     </Modal>
   );
