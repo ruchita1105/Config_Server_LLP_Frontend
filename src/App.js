@@ -17,8 +17,6 @@ import ResetPassword from "./components/ResetPassword";
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import API, { setOnTokenExpired } from "./services/api";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 
 function App() {
@@ -109,7 +107,7 @@ function App() {
       </Routes>
 
     
-      <ToastContainer position="top-center" autoClose={3000} />
+      
       <SessionTimeoutModal
         show={showTimeoutModal}
         onLogout={handleLogout}

@@ -1,16 +1,15 @@
-// src/components/ResetPassword.js
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import { toast } from "react-toastify";
 import { FaLock, FaSpinner } from "react-icons/fa";
+import Alert from './Alert';
 import "../pages/Auth.css";
-import { showToast } from '../utils/toast';
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
   const { state } = useLocation();
   const email = state?.email;
   const navigate = useNavigate();
@@ -18,18 +17,26 @@ function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      setAlert({
+        type: 'error',
+        message: 'Passwords do not match'
+      });
       return;
     }
 
     setLoading(true);
     try {
       await API.post("/api/auth/reset-password", { email, newPassword: password });
-      showToast("success","Password reset successfully");
-      
-      navigate("/login");
+      setAlert({
+        type: 'success',
+        message: 'Password reset successfully',
+        onClose: () => navigate("/login")
+      });
     } catch {
-      showToast('Reset failed. Try again.');
+      setAlert({
+        type: 'error',
+        message: 'Reset failed. Try again.'
+      });
     } finally {
       setLoading(false);
     }
@@ -42,6 +49,7 @@ function ResetPassword() {
 
   return (
     <div className="auth-container">
+      {alert && <Alert {...alert} />}
       <div className="auth-box">
         <h2 className="auth-title">Reset Password</h2>
         <form onSubmit={handleSubmit}>

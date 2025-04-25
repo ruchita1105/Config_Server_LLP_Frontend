@@ -1,16 +1,14 @@
-// src/components/ForgotPassword.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-//import { toast } from 'react-toastify';
 import { FaEnvelope, FaSpinner } from 'react-icons/fa';
+import Alert from './Alert';
 import '../pages/Auth.css';
-import { showToast } from '../utils/toast';
-
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,12 +17,16 @@ const ForgotPassword = () => {
 
     try {
       await axios.post('http://localhost:8080/api/auth/forgot-password', { email });
-      showToast("success","OTP sent to your email");
-     
-      navigate('/verify-otp', { state: { email } });
-     
+      setAlert({
+        type: 'success',
+        message: 'OTP sent to your email',
+        onClose: () => navigate('/verify-otp', { state: { email } })
+      });
     } catch {
-      showToast("error","Failed to send OTP. Try again later.");
+      setAlert({
+        type: 'error',
+        message: 'Failed to send OTP. Try again later.'
+      });
     } finally {
       setLoading(false);
     }
@@ -32,6 +34,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="auth-container">
+      {alert && <Alert {...alert} />}
       <div className="auth-box">
         <h2 className="auth-title">Forgot Password</h2>
         <form onSubmit={handleSubmit}>

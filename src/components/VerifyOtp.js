@@ -1,15 +1,14 @@
-// src/components/VerifyOtp.js
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import { toast } from "react-toastify";
 import { FaKey, FaSpinner } from "react-icons/fa";
+import Alert from './Alert';
 import "../pages/Auth.css";
-import { showToast } from '../utils/toast';
 
 function VerifyOtp() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
   const { state } = useLocation();
   const email = state?.email;
   const navigate = useNavigate();
@@ -21,11 +20,16 @@ function VerifyOtp() {
     setLoading(true);
     try {
       await API.post("/api/auth/verify-otp", { email, otp });
-      showToast("success","OTP verified. Reset your password.");
-      
-      navigate("/reset-password", { state: { email } });
+      setAlert({
+        type: 'success',
+        message: 'OTP verified. Reset your password.',
+        onClose: () => navigate("/reset-password", { state: { email } })
+      });
     } catch {
-      showToast("error","Invalid OTP. Try again.");
+      setAlert({
+        type: 'error',
+        message: 'Invalid OTP. Try again.'
+      });
     } finally {
       setLoading(false);
     }
@@ -38,6 +42,7 @@ function VerifyOtp() {
 
   return (
     <div className="auth-container">
+      {alert && <Alert {...alert} />}
       <div className="auth-box">
         <h2 className="auth-title">Verify OTP</h2>
         <form onSubmit={handleSubmit}>

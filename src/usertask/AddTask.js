@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Form, Button, Container, Alert, Spinner } from "react-bootstrap";
+import { Form, Button, Container, Alert as BootstrapAlert, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import UserService from "../services/UserService";
-//import { toast } from "react-toastify";
-import { showToast } from '../utils/toast'; 
+import Alert from "../components/Alert";
 
 const AddTask = () => {
   const [taskData, setTaskData] = useState({
@@ -13,6 +12,7 @@ const AddTask = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -29,15 +29,20 @@ const AddTask = () => {
     setError("");
 
     try {
-      // Updated to match the new UserService.createTask signature
       await UserService.createTask(taskData);
-      showToast("success","Task added successfully!");
-      navigate("/tasks");
+      setAlert({
+        type: 'success',
+        message: 'Task added successfully!',
+        onClose: () => navigate("/tasks")
+      });
     } catch (err) {
       console.error("Task creation error:", err);
       const errorMessage = err.message || "Failed to add task";
       setError(errorMessage);
-      showToast(errorMessage);
+      setAlert({
+        type: 'error',
+        message: errorMessage
+      });
     } finally {
       setLoading(false);
     }
@@ -45,17 +50,18 @@ const AddTask = () => {
 
   return (
     <Container className="mt-4" style={{ maxWidth: "600px" }}>
+      {alert && <Alert {...alert} />}
       <h2 className="mb-4 text-center">Add New Task</h2>
       
       {error && (
-        <Alert 
+        <BootstrapAlert 
           variant="danger" 
           className="mb-3"
           onClose={() => setError("")}
           dismissible
         >
           {error}
-        </Alert>
+        </BootstrapAlert>
       )}
 
       <Form onSubmit={handleSubmit}>

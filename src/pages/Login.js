@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaSpinner } from "react-icons/fa";
-import { toast } from "react-toastify";
-//import "react-toastify/dist/ReactToastify.css";
+import Alert from "../components/Alert";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Auth.css";
 
@@ -14,9 +13,9 @@ function Login() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
-  // ✅ Redirect to dashboard if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -81,25 +80,22 @@ function Login() {
 
       const { token, refreshToken, sessionId, role, userId } = res.data;
 
-      // Store all authentication data
       localStorage.setItem("token", token);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("sessionId", sessionId);
       localStorage.setItem("role", role.toLowerCase());
       localStorage.setItem("userId", userId);
 
-      // Set default authorization header
       API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Show success notification
-      toast.success("Login successful!", {
-        autoClose: 2000,
-        position: "top-center"
+      setAlert({
+        type: 'success',
+        message: 'Login successful!',
+        onClose: () => {
+          const redirectPath = role.toLowerCase() === "admin" ? "/admin" : "/user";
+          navigate(redirectPath, { replace: true });
+        }
       });
-
-      // Redirect based on role
-      const redirectPath = role.toLowerCase() === "admin" ? "/admin" : "/user";
-      navigate(redirectPath, { replace: true });
 
     } catch (err) {
       console.error("Login error:", err);
@@ -113,12 +109,11 @@ function Login() {
         }
       }
 
-      toast.error(errorMessage, {
-        autoClose: 3000,
-        position: "top-center"
+      setAlert({
+        type: 'error',
+        message: errorMessage
       });
 
-      // Clear sensitive data on failure
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
@@ -129,6 +124,7 @@ function Login() {
 
   return (
     <div className="auth-container">
+      {alert && <Alert {...alert} />}
       <div className="auth-box">
         <h2 className="auth-title">Welcome Back</h2>
         <p className="auth-subtitle">Login to access your account</p>
@@ -145,7 +141,6 @@ function Login() {
               onChange={handleChange}
               value={credentials.email}
               className={`form-control ${errors.email ? "is-invalid" : ""}`}
-
               autoComplete="username"
               required
             />
@@ -165,7 +160,6 @@ function Login() {
               onChange={handleChange}
               value={credentials.password}
               className={`form-control ${errors.password ? "is-invalid" : ""}`}
-
               autoComplete="current-password"
               required
             />
