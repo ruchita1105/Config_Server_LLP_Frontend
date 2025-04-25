@@ -1,5 +1,6 @@
+// src/App.js
 import React, { useState, useEffect, useRef } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import AdminDashboard from './dashboards/AdminDashboard';
 import UserDashboard from './dashboards/UserDashboard';
 import Login from './pages/Login';
@@ -16,10 +17,9 @@ import ResetPassword from "./components/ResetPassword";
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import API, { setOnTokenExpired } from "./services/api";
-
-// ✅ Toast imports
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 
 function App() {
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
@@ -27,6 +27,7 @@ function App() {
   const modalShownRef = useRef(false);
   const countdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.clear();
@@ -40,16 +41,13 @@ function App() {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
       const response = await API.post("api/auth/refresh-token", { refreshToken });
-
       const newToken = response.data.token;
       localStorage.setItem("token", newToken);
       API.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
-
       setShowTimeoutModal(false);
       modalShownRef.current = false;
       clearInterval(countdownRef.current);
     } catch (error) {
-      console.error("Token refresh failed:", error);
       handleLogout();
     }
   };
@@ -83,9 +81,7 @@ function App() {
             });
           }, 1000);
         }
-      } catch (err) {
-        console.error("Token decode error:", err);
-      }
+      } catch (err) {}
     }, 1000);
 
     return () => {
@@ -96,126 +92,24 @@ function App() {
 
   return (
     <div className="App">
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPassword />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/verify-otp"
-          element={
-            <PublicRoute>
-              <VerifyOtp />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/reset-password"
-          element={
-            <PublicRoute>
-              <ResetPassword />
-            </PublicRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <UserDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user-form"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <UserForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user/tasks"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <UserTask />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-tasks"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <AddTask />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit-task/:taskId"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <UpdateTask />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tasks"
-          element={
-            <ProtectedRoute allowedRole="user">
-              <TaskList />
-            </ProtectedRoute>
-          }
-        />
+      <Routes location={location}>
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/verify-otp" element={<PublicRoute><VerifyOtp key={location.key} /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
+        <Route path="/user-form" element={<ProtectedRoute allowedRole="user"><UserForm /></ProtectedRoute>} />
+        <Route path="/user/tasks" element={<ProtectedRoute allowedRole="user"><UserTask /></ProtectedRoute>} />
+        <Route path="/add-tasks" element={<ProtectedRoute allowedRole="user"><AddTask /></ProtectedRoute>} />
+        <Route path="/edit-task/:taskId" element={<ProtectedRoute allowedRole="user"><UpdateTask /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute allowedRole="user"><TaskList /></ProtectedRoute>} />
       </Routes>
 
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-
+    
+      <ToastContainer position="top-center" autoClose={3000} />
       <SessionTimeoutModal
         show={showTimeoutModal}
         onLogout={handleLogout}

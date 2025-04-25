@@ -1,9 +1,11 @@
+// src/components/ResetPassword.js
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { toast } from "react-toastify";
 import { FaLock, FaSpinner } from "react-icons/fa";
 import "../pages/Auth.css";
+import { showToast } from '../utils/toast';
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -15,22 +17,19 @@ function ResetPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (password !== confirmPassword) {
-      toast.error("Passwords don't match!");
+      toast.error("Passwords do not match");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await API.post("/api/auth/reset-password", { 
-        email, 
-        newPassword: password 
-      });
-      toast.success(response.data.message);
+      await API.post("/api/auth/reset-password", { email, newPassword: password });
+      showToast("success","Password reset successfully");
+      
       navigate("/login");
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to reset password");
+    } catch {
+      showToast('Reset failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -45,13 +44,9 @@ function ResetPassword() {
     <div className="auth-container">
       <div className="auth-box">
         <h2 className="auth-title">Reset Password</h2>
-        <p className="auth-subtitle">Create a new password for {email}</p>
-
         <form onSubmit={handleSubmit}>
           <div className="input-group mb-3">
-            <span className="input-icon">
-              <FaLock />
-            </span>
+            <span className="input-icon"><FaLock /></span>
             <input
               type="password"
               placeholder="New Password"
@@ -62,11 +57,8 @@ function ResetPassword() {
               minLength={6}
             />
           </div>
-
           <div className="input-group mb-3">
-            <span className="input-icon">
-              <FaLock />
-            </span>
+            <span className="input-icon"><FaLock /></span>
             <input
               type="password"
               placeholder="Confirm Password"
@@ -77,16 +69,8 @@ function ResetPassword() {
               minLength={6}
             />
           </div>
-
-          <button className="auth-btn w-100 btn btn-primary" disabled={loading}>
-            {loading ? (
-              <>
-                <FaSpinner className="spinner me-2" />
-                Resetting...
-              </>
-            ) : (
-              "Reset Password"
-            )}
+          <button className="auth-btn btn btn-primary w-100" disabled={loading}>
+            {loading ? <><FaSpinner className="spinner me-2" /> Resetting...</> : "Reset Password"}
           </button>
         </form>
       </div>

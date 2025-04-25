@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Form, Button, Container, Alert, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import UserService from "../services/UserService";
-import { toast } from "react-toastify";
+//import { toast } from "react-toastify";
+import { showToast } from '../utils/toast'; 
 
 const AddTask = () => {
   const [taskData, setTaskData] = useState({
@@ -30,13 +31,13 @@ const AddTask = () => {
     try {
       // Updated to match the new UserService.createTask signature
       await UserService.createTask(taskData);
-      toast.success("Task added successfully!");
+      showToast("success","Task added successfully!");
       navigate("/tasks");
     } catch (err) {
       console.error("Task creation error:", err);
       const errorMessage = err.message || "Failed to add task";
       setError(errorMessage);
-      toast.error(errorMessage);
+      showToast(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -11,6 +11,7 @@ root.render(
   <BrowserRouter>
     <AuthProvider>  {/* Wrap your App with AuthProvider */}
       <App />
+      
     </AuthProvider>
   </BrowserRouter>
 );

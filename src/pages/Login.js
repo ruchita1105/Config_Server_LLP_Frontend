@@ -3,7 +3,7 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+//import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Auth.css";
 
@@ -145,6 +145,7 @@ function Login() {
               onChange={handleChange}
               value={credentials.email}
               className={`form-control ${errors.email ? "is-invalid" : ""}`}
+
               autoComplete="username"
               required
             />
@@ -164,6 +165,7 @@ function Login() {
               onChange={handleChange}
               value={credentials.password}
               className={`form-control ${errors.password ? "is-invalid" : ""}`}
+
               autoComplete="current-password"
               required
             />
