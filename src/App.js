@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import AdminDashboard from './dashboards/AdminDashboard';
 import UserDashboard from './dashboards/UserDashboard';
 import Login from './pages/Login';
@@ -18,10 +18,26 @@ import ResetPassword from "./components/ResetPassword";
 import API from "./services/api";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// ✅ New imports for UnauthenticatedRoute
+import UnauthenticatedRoute from './components/UnauthenticatedRoute'; 
+
+import { ToastContainer } from "react-toastify"; // ✅ Toast container import
+import "react-toastify/dist/ReactToastify.css";  // ✅ Toast styles
 
 function App() {
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (token && ["/", "/login", "/register"].includes(location.pathname)) {
+      if (role === "admin") navigate("/admin", { replace: true });
+      else if (role === "user") navigate("/user", { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -33,7 +49,6 @@ function App() {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
       const response = await API.post("api/auth/refresh-token", { refreshToken });
-
       localStorage.setItem("token", response.data.token);
       API.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
       setShowTimeoutModal(false);
@@ -44,81 +59,52 @@ function App() {
     }
   };
 
-  // useEffect(() => {
-  //   setOnTokenExpired(() => setShowTimeoutModal(true));
-
-  //   const checkTokenExpiration = setInterval(() => {
-  //     const token = localStorage.getItem("token");
-  //     if (token) {
-  //       try {
-  //         const { exp } = JSON.parse(atob(token.split('.')[1]));
-  //         if (Date.now() >= exp * 1000) {
-  //           setShowTimeoutModal(true);
-  //         }
-  //       } catch (err) {
-  //         console.error("Token parsing error:", err);
-  //       }
-  //     }
-  //   }, 60000);
-
-  //   return () => clearInterval(checkTokenExpiration);
-  // }, []);
   useEffect(() => {
-    // Register callback for API-level token expiration
     setOnTokenExpired(() => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setShowTimeoutModal(true);
-      }
+      if (localStorage.getItem("token")) setShowTimeoutModal(true);
     });
-  
+
     const intervalId = setInterval(() => {
       const token = localStorage.getItem("token");
-  
-      // Only run expiration logic if token is valid
       if (token) {
         try {
           const { exp } = JSON.parse(atob(token.split('.')[1]));
-          if (Date.now() >= exp * 1000) {
-            setShowTimeoutModal(true);
-          }
+          if (Date.now() >= exp * 1000) setShowTimeoutModal(true);
         } catch (err) {
           console.error("Token parsing error:", err);
         }
       }
     }, 60000);
-  
+
     return () => clearInterval(intervalId);
   }, []);
 
-  
   return (
     <div className="App">
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Protected Routes */}
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/user" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-        <Route path="/user-form" element={<ProtectedRoute><UserForm /></ProtectedRoute>} />
-        <Route path="/user/tasks" element={<ProtectedRoute><UserTask /></ProtectedRoute>} />
-        <Route path="/add-tasks" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
-        <Route path="/edit-task/:taskId" element={<ProtectedRoute><UpdateTask /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
-        <Route path="/view-task/:taskId" element={<ProtectedRoute><ViewTask /></ProtectedRoute>} />
+        {/* ✅ Add UnauthenticatedRoute for ForgotPassword, VerifyOtp, and ResetPassword */}
+        <Route path="/forgot-password" element={<UnauthenticatedRoute><ForgotPassword /></UnauthenticatedRoute>} />
+        <Route path="/verify-otp" element={<UnauthenticatedRoute><VerifyOtp /></UnauthenticatedRoute>} />
+        <Route path="/reset-password" element={<UnauthenticatedRoute><ResetPassword /></UnauthenticatedRoute>} />
+
+        <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
+        <Route path="/user-form" element={<ProtectedRoute allowedRole="admin"><UserForm /></ProtectedRoute>} />
+        <Route path="/user/tasks" element={<ProtectedRoute allowedRole="user"><UserTask /></ProtectedRoute>} />
+        <Route path="/add-tasks" element={<ProtectedRoute allowedRole="user"><AddTask /></ProtectedRoute>} />
+        <Route path="/edit-task/:taskId" element={<ProtectedRoute allowedRole="user"><UpdateTask /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute allowedRole="user"><TaskList /></ProtectedRoute>} />
+        <Route path="/view-task/:taskId" element={<ProtectedRoute allowedRole="user"><ViewTask /></ProtectedRoute>} />
       </Routes>
 
-      <SessionTimeoutModal
-        show={showTimeoutModal}
-        onLogout={handleLogout}
-        onContinue={handleContinue}
-      />
+      <SessionTimeoutModal show={showTimeoutModal} onLogout={handleLogout} onContinue={handleContinue} />
+
+      {/* ✅ This enables all toast notifications like login errors */}
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop={false} />
     </div>
   );
 }
