@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Form, Button, Container, Spinner, Alert } from "react-bootstrap";
+import { Form, Button, Container, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import UserService from "../services/UserService";
-import { toast } from "react-toastify";
+import Alert from "../components/Alert";
 
 const UpdateTask = () => {
   const { taskId } = useParams();
   const [task, setTask] = useState({ 
     title: "", 
     description: "",
-    status: "Pending" // Added status field
+    status: "Pending"
   });
-  const [loading, setLoading] = useState(true); // Changed initial state
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   const fetchTask = async () => {
@@ -26,8 +26,11 @@ const UpdateTask = () => {
       });
     } catch (error) {
       console.error("Fetch error:", error);
-      setError("Failed to load task details");
-      toast.error("Failed to load task");
+      setAlert({
+        type: 'error',
+        message: "Failed to load task details",
+        duration: 5000
+      });
     } finally {
       setLoading(false);
     }
@@ -35,20 +38,27 @@ const UpdateTask = () => {
 
   useEffect(() => {
     fetchTask();
-  }, [taskId]); // Added taskId to dependencies
+  }, [taskId]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setAlert(null); // Clear previous alerts
     
     try {
       await UserService.updateTask(taskId, task);
-      toast.success("Task updated successfully!");
-      navigate("/tasks"); // Changed to consistent route
+      setAlert({
+        type: 'success',
+        message: "Task updated successfully!",
+        onClose: () => navigate("/tasks")
+      });
     } catch (error) {
       console.error("Update error:", error);
-      setError(error.response?.data?.message || "Failed to update task");
-      toast.error("Failed to update task");
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.message || "Failed to update task",
+        duration: 5000
+      });
     } finally {
       setLoading(false);
     }
@@ -59,7 +69,7 @@ const UpdateTask = () => {
     setTask(prev => ({ ...prev, [name]: value }));
   };
 
-  if (loading) {
+  if (loading && !task.title) {
     return (
       <Container className="mt-5 text-center">
         <Spinner animation="border" />
@@ -68,17 +78,11 @@ const UpdateTask = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Container className="mt-5">
-        <Alert variant="danger">{error}</Alert>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
-      </Container>
-    );
-  }
-
   return (
     <Container className="mt-5" style={{ maxWidth: "600px" }}>
+      {/* Custom Alert Component */}
+      {alert && <Alert {...alert} />}
+
       <h2 className="mb-4">Update Task</h2>
       
       <Form onSubmit={handleUpdate}>

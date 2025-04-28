@@ -23,7 +23,14 @@ const UserDashboard = () => {
       {/* Dashboard Header with Centered Title and Logout Button */}
       <div className="d-flex justify-content-between align-items-center mb-5">
         <div style={{ width: "100%", textAlign: "center" }}>
-          <h2 className="m-0">Welcome to Your Dashboard</h2>
+        <h3 style={{
+  color: "brown",
+  textAlign: "center",  // Horizontal centering
+  width: "100%",       // Ensure full width for centering
+  margin: "20px 0"     // Add vertical spacing (optional)
+}}>
+  <b>Welcome User To Your Dashboard</b>
+</h3>
         </div>
         <Button 
           variant="outline-danger"

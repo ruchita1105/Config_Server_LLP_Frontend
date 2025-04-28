@@ -1,19 +1,23 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const PublicRoute = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  if (token && role === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
+  useEffect(() => {
+    if (token) {
+      const redirectPath = role === "admin" ? "/admin" : "/user";
+      navigate(redirectPath, { 
+        replace: true,
+        state: { preventBack: false } 
+      });
+    }
+  }, [token, role, navigate]);
 
-  if (token && role === "user") {
-    return <Navigate to="/user" replace />;
-  }
-
-  return children;
+  return !token ? children : null;
 };
 
 export default PublicRoute;
