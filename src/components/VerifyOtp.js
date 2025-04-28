@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { FaKey, FaSpinner } from "react-icons/fa";
-import Alert from './Alert';
+import Alert from "./Alert";
 import "../pages/Auth.css";
 
 function VerifyOtp() {

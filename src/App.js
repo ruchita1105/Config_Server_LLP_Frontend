@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import AdminDashboard from './dashboards/AdminDashboard';
@@ -18,7 +17,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import API, { setOnTokenExpired } from "./services/api";
 
-
 function App() {
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -32,7 +30,19 @@ function App() {
     setShowTimeoutModal(false);
     modalShownRef.current = false;
     clearInterval(countdownRef.current);
-    navigate("/login", { replace: true });
+    
+    navigate("/login", { 
+      replace: true,
+      state: { 
+        from: "logout",
+        preventBack: true 
+      }
+    });
+    
+    // Clear history stack
+    if (window.history && window.history.pushState) {
+      window.history.pushState(null, "", window.location.href);
+    }
   };
 
   const handleContinue = async () => {
@@ -53,6 +63,7 @@ function App() {
   useEffect(() => {
     setOnTokenExpired(() => setShowTimeoutModal(true));
 
+    // Handle token expiration check
     const interval = setInterval(() => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -79,35 +90,53 @@ function App() {
             });
           }, 1000);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Token parsing error:", err);
+      }
     }, 1000);
 
+    // Handle navigation control
+    const handlePopState = (event) => {
+      if (location.state?.preventBack) {
+        navigate("/login", { replace: true });
+      }
+      
+      // Block navigation during password reset flow
+      const inPasswordFlow = ['/forgot-password', '/verify-otp', '/reset-password']
+        .some(path => location.pathname.includes(path));
+      
+      if (inPasswordFlow) {
+        navigate(location.pathname, { replace: true });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
     return () => {
       clearInterval(interval);
       clearInterval(countdownRef.current);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [location, navigate]);
 
   return (
     <div className="App">
       <Routes location={location}>
         <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login onLoginSuccess={() => window.history.replaceState(null, "", "/")} /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/verify-otp" element={<PublicRoute><VerifyOtp key={location.key} /></PublicRoute>} />
         <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-        <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
-        <Route path="/user-form" element={<ProtectedRoute allowedRole="user"><UserForm /></ProtectedRoute>} />
-        <Route path="/user/tasks" element={<ProtectedRoute allowedRole="user"><UserTask /></ProtectedRoute>} />
-        <Route path="/add-tasks" element={<ProtectedRoute allowedRole="user"><AddTask /></ProtectedRoute>} />
-        <Route path="/edit-task/:taskId" element={<ProtectedRoute allowedRole="user"><UpdateTask /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute allowedRole="user"><TaskList /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute allowedRole="admin" onUnauthorized={handleLogout}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/user" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><UserDashboard /></ProtectedRoute>} />
+        <Route path="/user-form" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><UserForm /></ProtectedRoute>} />
+        <Route path="/user/tasks" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><UserTask /></ProtectedRoute>} />
+        <Route path="/add-tasks" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><AddTask /></ProtectedRoute>} />
+        <Route path="/edit-task/:taskId" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><UpdateTask /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute allowedRole="user" onUnauthorized={handleLogout}><TaskList /></ProtectedRoute>} />
       </Routes>
 
-    
-      
       <SessionTimeoutModal
         show={showTimeoutModal}
         onLogout={handleLogout}

@@ -71,6 +71,7 @@ function Login() {
     if (!validateForm()) return;
 
     setLoading(true);
+    setAlert(null);
 
     try {
       const res = await API.post("/api/auth/login", {
@@ -90,7 +91,7 @@ function Login() {
 
       setAlert({
         type: 'success',
-        message: 'Login successful!',
+        message: <center>'Login successful!..'</center>,
         onClose: () => {
           const redirectPath = role.toLowerCase() === "admin" ? "/admin" : "/user";
           navigate(redirectPath, { replace: true });
@@ -124,7 +125,18 @@ function Login() {
 
   return (
     <div className="auth-container">
-      {alert && <Alert {...alert} />}
+      {/* Alert positioned fixed at top */}
+      {alert && (
+        <div className="alert-fixed-top">
+          <Alert 
+            type={alert.type} 
+            message={alert.message}
+            onClose={alert.onClose}
+          />
+        </div>
+      )}
+
+      {/* Login form - remains centered */}
       <div className="auth-box">
         <h2 className="auth-title">Welcome Back</h2>
         <p className="auth-subtitle">Login to access your account</p>
@@ -209,3 +221,4 @@ function Login() {
 }
 
 export default Login;
+

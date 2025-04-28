@@ -1,29 +1,29 @@
-// src/components/Alert.js
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import './Alert.css';
 
-const Alert = ({ type, message, duration = 3000, onClose }) => {
+function Alert({ type = 'success', message, onClose, duration = 3000 }) {
   useEffect(() => {
-    if (duration) {
-      const timer = setTimeout(() => {
-        onClose?.();
-      }, duration);
-      return () => clearTimeout(timer);
-    }
-  }, [duration, onClose]);
+    const timer = setTimeout(() => {
+      onClose?.();
+    }, duration);
+    
+    return () => clearTimeout(timer);
+  }, [onClose, duration]);
 
   return (
-    <div className={`alert alert-${type}`}>
-      <div className="alert-message">{message}</div>
-      <button 
-        className="alert-close"
-        onClick={() => onClose?.()}
-        aria-label="Close alert"
-      >
-        &times;
-      </button>
+    <div className="alert-container">
+      <div className={`alert alert-${type}`}>
+        {message}
+        <button 
+          className="alert-close" 
+          onClick={onClose} 
+          aria-label="Close alert"
+        >
+          &times;
+        </button>
+      </div>
     </div>
   );
-};
+}
 
 export default Alert;

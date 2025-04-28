@@ -3,6 +3,7 @@ import { Container, Table, Button, Spinner, Alert as BootstrapAlert, Modal } fro
 import { useNavigate } from 'react-router-dom';
 import UserService from '../services/UserService';
 import Alert from '../components/Alert';
+import { FaArrowLeft } from 'react-icons/fa';
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -138,6 +139,17 @@ const TaskList = () => {
   return (
     <Container className="mt-4">
       {alert && <Alert {...alert} />}
+      
+      {/* Added Back Button */}
+      <Button 
+        variant="outline-secondary" 
+        onClick={() => navigate('/user')} 
+        className="mb-3"
+      >
+        <FaArrowLeft className="me-2" />
+        Back to Dashboard
+      </Button>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Your Tasks</h2>
         <Button variant="primary" onClick={() => navigate('/add-tasks')} className="ms-2">

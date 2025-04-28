@@ -1,26 +1,26 @@
-// src/Dashboard/AdminDashboard.js
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import Alert from '../components/Alert';
 import UserForm from '../users/UserForm';
+import UserList from '../users/UserList';
 import Swal from 'sweetalert2';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const adminId = localStorage.getItem('userId');
 
       if (!token || !adminId) {
-       // navigate('/login');
-       navigate("/login", { replace: true }); 
+        navigate("/login", { replace: true }); 
         return;
       }
 
@@ -33,7 +33,10 @@ const AdminDashboard = () => {
       setUsers(response.data);
     } catch (error) {
       console.error("❌ Error fetching users:", error);
-      toast.error(error.response?.data?.message || "Error fetching users!");
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.message || "Error fetching users!"
+      });
     } finally {
       setLoading(false);
     }
@@ -48,7 +51,10 @@ const AdminDashboard = () => {
       const userToEdit = users.find(user => user.id === userId);
       
       if (!userToEdit) {
-        toast.error("User not found");
+        setAlert({
+          type: 'error',
+          message: "User not found"
+        });
         return;
       }
 
@@ -169,17 +175,23 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('sessionId');
     localStorage.removeItem('userId');
     localStorage.removeItem('role');
-    localStorage.removeItem('lastLogin');
     navigate('/login', { replace: true });
   };
 
   return (
     <div className="container mt-4">
+      {alert && <Alert {...alert} />}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Admin Dashboard</h2>
+      <h4 style={{
+  color: "green",
+  textAlign: "center",  // Horizontal centering
+  width: "100%",       // Ensure full width for centering
+  margin: "20px 0"     // Add vertical spacing (optional)
+}}>
+  <b>Welcome To Admin Dashboard</b>
+</h4>
         <button 
           className="btn btn-danger"
           onClick={handleLogout}
@@ -192,58 +204,11 @@ const AdminDashboard = () => {
         <UserForm fetchUsers={fetchUsers} />
       </div>
 
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : users.length === 0 ? (
-        <p>No users found.</p>
-      ) : (
-        <div className="list-group">
-          {users.map((user) => (
-            <div key={user.id} className="list-group-item">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h5>{user.username}</h5>
-                  <p>{user.firstname} {user.lastname}</p>
-                  <p>Role: <span className={`badge ${
-                    user.role === 'ADMIN' ? 'bg-danger' : 'bg-primary'
-                  }`}>
-                    {user.role}
-                  </span></p>
-                </div>
-                <div>
-                  <button
-                    className="btn btn-primary me-2"
-                    onClick={() => handleEditUser(user.id)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <ToastContainer 
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
+      <UserList 
+        users={users} 
+        loading={loading}
+        onEdit={handleEditUser}
+        onDelete={handleDeleteUser}
       />
     </div>
   );
